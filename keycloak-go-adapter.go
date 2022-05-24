@@ -27,17 +27,17 @@ func Init(clientId string, serverUrl string, realm string) {
 	}
 }
 
-func Protect(r *http.Request, roles []string, anyRole bool) (bool, int, error) {
+func Protect(r *http.Request, roles []string, any bool) (bool, int, error) {
 	//extract access token from the request
 	authHeader := r.Header.Get("Authorization")
 	if len(authHeader) < 1 {
 		return false, http.StatusUnauthorized, errors.New("authorization header not present")
 	}
 	rawToken := strings.Split(authHeader, " ")[1]
-	return RawProtect(r.Context(), rawToken, roles, anyRole)
+	return RawProtect(r.Context(), rawToken, roles, any)
 }
 
-func RawProtect(c context.Context, rawToken string, roles []string, anyRole bool) (bool, int, error) {
+func RawProtect(c context.Context, rawToken string, roles []string, any bool) (bool, int, error) {
 	//decode access token
 	accessToken, claims, err := config.goCloakClient.DecodeAccessToken(c, rawToken, config.realm)
 
@@ -62,7 +62,7 @@ func RawProtect(c context.Context, rawToken string, roles []string, anyRole bool
 				return funk.Contains(roles, elem)
 			})
 
-			if (anyRole && len(matchedRoles.([]interface{})) == 0) || (!anyRole && len(matchedRoles.([]interface{})) != len(roles)) {
+			if (any && len(matchedRoles.([]interface{})) == 0) || (!any && len(matchedRoles.([]interface{})) != len(roles)) {
 				return false, http.StatusForbidden, nil
 			}
 		}

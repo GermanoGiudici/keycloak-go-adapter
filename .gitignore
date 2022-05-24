@@ -1,2 +1,3 @@
 /.idea/
 /keycloak-go-adapter.iml
+/docker/keycloak-db/
