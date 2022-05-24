@@ -5,6 +5,7 @@ import (
 	"github.com/Nerzal/gocloak/v11"
 	"github.com/stretchr/testify/assert"
 	"net/http"
+	"net/http/httptest"
 	"testing"
 )
 
@@ -21,7 +22,7 @@ func init() {
 	Init(clientId, serverUrl, realm)
 }
 
-func TestAuthorized(t *testing.T) {
+func TestAuthorized_rawprotect(t *testing.T) {
 	var (
 		authorized, httpStatus, err interface{}
 		token                       *gocloak.JWT
@@ -80,7 +81,7 @@ func TestAuthorized(t *testing.T) {
 
 }
 
-func TestNotAuthorized(t *testing.T) {
+func TestUnauthorized_rawprotect(t *testing.T) {
 	var (
 		authorized, httpStatus, err interface{}
 		token                       *gocloak.JWT
@@ -112,5 +113,52 @@ func TestNotAuthorized(t *testing.T) {
 	assert.Equal(t, false, authorized)
 	assert.Equal(t, http.StatusForbidden, httpStatus)
 	assert.Nil(t, err)
+
+}
+
+func Test_protect(t *testing.T) {
+	var (
+		authorized, httpStatus, err interface{}
+		token                       *gocloak.JWT
+		request                     *http.Request
+	)
+
+	token, _ = client.Login(context.Background(), "web_app", "-", realm, "user1", "user1")
+
+	request = httptest.NewRequest("GET", "http://example.com", nil)
+	request.Header.Set("Authorization", "Bearer "+token.AccessToken)
+
+	authorized, httpStatus, err = Protect(request, []string{}, true)
+
+	assert.Equal(t, true, authorized)
+	assert.Equal(t, http.StatusOK, httpStatus)
+	assert.Nil(t, err)
+
+	request = httptest.NewRequest("GET", "http://example.com", nil)
+	request.Header.Set("Authorization", "")
+
+	authorized, httpStatus, err = Protect(request, []string{}, true)
+
+	assert.Equal(t, false, authorized)
+	assert.Equal(t, http.StatusUnauthorized, httpStatus)
+	assert.NotNil(t, err)
+
+	request = httptest.NewRequest("GET", "http://example.com", nil)
+	request.Header.Set("Authorization", "fake token")
+
+	authorized, httpStatus, err = Protect(request, []string{}, true)
+
+	assert.Equal(t, false, authorized)
+	assert.Equal(t, http.StatusUnauthorized, httpStatus)
+	assert.NotNil(t, err)
+
+	token, _ = client.Login(context.Background(), "web_app", "-", realm, "user1", "user1")
+
+	request = httptest.NewRequest("GET", "http://example.com", nil)
+	request.Header.Set("Authorization", token.AccessToken)
+
+	assert.Equal(t, false, authorized)
+	assert.Equal(t, http.StatusUnauthorized, httpStatus)
+	assert.NotNil(t, err)
 
 }

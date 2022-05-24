@@ -1,4 +1,9 @@
 # keycloak-go-adapter
+An adapter to protect golang api with keycloak
+It is based on entando platform needs (www.entando.com)
+
+usage:
+
 
 
 
